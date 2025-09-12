@@ -1,0 +1,47 @@
+# ---- Build e pacotes ----
+bin/
+obj/
+out/
+*.exe
+*.dll
+*.pdb
+*.cache
+*.log
+
+# ---- Usuário / IDE ----
+.vscode/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ---- Pacotes NuGet ----
+*.nupkg
+*.snupkg
+packages/
+*.nuspec
+*.psmdcp
+
+# ---- Configuração local ----
+appsettings.Development.json
+appsettings.Local.json
+
+# ---- Sistema operacional ----
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Mac
+.DS_Store
+
+# ---- Logs e temporários ----
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# ---- Outros ----
+node_modules/
