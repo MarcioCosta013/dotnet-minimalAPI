@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using minimal_api.Entidades;
+using minimal_api.Dominio.Entidades;
 
 namespace minimal_api.Infraestrutura.Db
 {
@@ -20,7 +16,7 @@ namespace minimal_api.Infraestrutura.Db
         {
             if (!optionsBuilder.IsConfigured)
             {
-                //caso a configuracao nao tenha ocoriido pelo contrutor vai ser feita aqui...
+                //caso a configuracao nao tenha ocorrido pelo contrutor vai ser feita aqui...
                 var stringConexao = _configuracaoAppSettings.GetConnectionString("mysql")?.ToString(); //o '?' é para se nao encontrar nada retornar vazio...
                 if (!string.IsNullOrEmpty(stringConexao))
                 {
