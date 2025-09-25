@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<IAdministradorServico, AdministradorServico>();
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 builder.Services.AddDbContext<DbContexto>(options =>
 {
     options.UseMySql(
@@ -18,7 +21,8 @@ builder.Services.AddDbContext<DbContexto>(options =>
 });
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World454545!");
+
+app.MapGet("/", () => "Olá Galera top!");
 
 
 app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministradorServico administradorServico) =>
@@ -28,5 +32,8 @@ app.MapPost("/login", ([FromBody] LoginDTO loginDTO, IAdministradorServico admin
     else
         return Results.Unauthorized();
 });
+
+app.UseSwagger();
+app.UseSwaggerUI(); //Para ter a interface do Swagger.
 
 app.Run();
