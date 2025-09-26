@@ -15,7 +15,7 @@ namespace minimal_api.Dominio.Entidades
 
         [Required]
         [StringLength(100)]
-        public string Marco { get; set; }
+        public string Marca { get; set; }
         
         [Required]
         public int Ano { get; set; } 
