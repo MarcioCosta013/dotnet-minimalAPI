@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using minimal_api.Dominio.DTOs;
 using minimal_api.Dominio.Entidades;
+using minimal_api.Dominio.Enuns;
 using minimal_api.Dominio.Interfaces;
 using minimal_api.Dominio.ModelViews;
 using minimal_api.Dominio.Servicos;
@@ -37,7 +38,76 @@ app.MapPost("/administradores/login", ([FromBody] LoginDTO loginDTO, IAdministra
         return Results.Ok("Acesso feito com sucesso!");
     else
         return Results.Unauthorized();
-}).WithTags("Adiministradores");
+}).WithTags("Administradores");
+
+app.MapGet("/administradores", ([FromQuery] int? pagina, IAdministradorServico administradorServico) =>
+{
+    var adms = new List<AdministradoModelViews>();
+    var adminiastradores = administradorServico.Todos(pagina);
+    foreach (var adm in adminiastradores)
+    {
+        adms.Add(new AdministradoModelViews
+        {
+            Id = adm.Id,
+            Email = adm.Email,
+            Perfil = adm.Perfil
+        });
+    }
+    return Results.Ok(adms);
+}).WithTags("Administradores");
+
+app.MapPost("/administradores", ([FromBody] AdministradorDTO administradorDTO, IAdministradorServico administradorServico) =>
+
+{
+    #region validacao
+    var validacao = new ErrosDeValidacao
+    {
+        Mensagens = new List<string>()
+    };
+
+    if (string.IsNullOrEmpty(administradorDTO.Email))
+        validacao.Mensagens.Add("Email não pode ser vazio!");
+
+    if (string.IsNullOrEmpty(administradorDTO.Senha))
+        validacao.Mensagens.Add("Senha não pode ser vazia!");
+
+    if (administradorDTO.Perfil == null)
+        validacao.Mensagens.Add("Perfil não pode ser vazio!");
+    #endregion
+
+    if (validacao.Mensagens.Count > 0)
+        return Results.BadRequest(validacao);
+
+    var adm = new Administrador
+    {
+        Email = administradorDTO.Email,
+        Senha = administradorDTO.Senha,
+        Perfil = administradorDTO.Perfil.ToString() ?? Perfil.Editor.ToString() //Se vier vazio coloca o editor como padrão.
+    };
+
+    administradorServico.Incluir(adm);
+
+    return Results.Created($"/adiministrador/{adm.Id}", new AdministradoModelViews
+        {
+            Id = adm.Id,
+            Email = adm.Email,
+            Perfil = adm.Perfil
+        });
+}).WithTags("Administradores");
+
+app.MapGet("/administrador/{id}", ([FromRoute] int id, IAdministradorServico administradorServico) =>
+{
+    var administrador = administradorServico.BuscaPorId(id);
+
+    if (administrador == null) return Results.NotFound();
+
+    return Results.Ok(new AdministradoModelViews
+        {
+            Id = administrador.Id,
+            Email = administrador.Email,
+            Perfil = administrador.Perfil
+        });
+}).WithTags("Administradores");
 #endregion
 
 #region Veiculos
