@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using minimal_api.Dominio.Entidades;
@@ -11,6 +7,7 @@ using minimal_api.Infraestrutura.Db;
 
 namespace Test.Domain.Servicos
 {
+    [TestClass]
     public class AdministradorServicoTest
     {
         private DbContexto CriarContextoDeTeste()
@@ -21,7 +18,7 @@ namespace Test.Domain.Servicos
 
             var builder = new ConfigurationBuilder()
                 .SetBasePath(path ?? Directory.GetCurrentDirectory()) //se o path vier nulo ...
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.Test.json", optional: false, reloadOnChange: true)
                 .AddEnvironmentVariables();
 
             var configuration = builder.Build();
@@ -41,16 +38,16 @@ namespace Test.Domain.Servicos
             adm.Senha = "teste";
             adm.Perfil = "Adm";
 
-            var adminstradorServico = new AdministradorServico(context);
+            var administradorServico = new AdministradorServico(context);
 
             //Act - todas as ações que vamos fazer...
-            adminstradorServico.Incluir(adm);
+            administradorServico.Incluir(adm);
 
             //Assert - onde é feita a validação dos dados...
-            Assert.AreEqual(1, adminstradorServico.Todos(1).Count());
+            Assert.AreEqual(1, administradorServico.Todos(1).Count());
 
         }
-        
+
         [TestMethod]
         public void TestandoBuscaPorId()
         {
@@ -70,8 +67,8 @@ namespace Test.Domain.Servicos
             var admDoBanco = adminstradorServico.BuscaPorId(adm.Id);
 
             //Assert - onde é feita a validação dos dados...
-            Assert.AreEqual(1, admDoBanco.Id);
-            
+            Assert.AreEqual(1, admDoBanco?.Id);
+
         }
     }
 }
