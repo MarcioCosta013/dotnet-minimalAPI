@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using minimal_api;
 using minimal_api.Dominio.DTOs;
 using minimal_api.Dominio.Entidades;
 using minimal_api.Dominio.Enuns;
@@ -14,7 +15,7 @@ using minimal_api.Dominio.Interfaces;
 using minimal_api.Dominio.ModelViews;
 using minimal_api.Dominio.Servicos;
 using minimal_api.Infraestrutura.Db;
-using minimal_api;
+
 
 public class Startup
 {
@@ -102,7 +103,7 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             #region Home
-                endpoints.MapGet("/", () => Results.Json(new Home())).AllowAnonymous().WithTags("Home");
+            endpoints.MapGet("/", () => Results.Json(new Home())).AllowAnonymous().WithTags("Home");
             #endregion
 
             #region administradores
@@ -226,101 +227,101 @@ public class Startup
             #endregion
 
             #region veiculos
-                ErrosDeValidacao validaDTO( VeiculoDTO veiculoDTO)
+            ErrosDeValidacao validaDTO(VeiculoDTO veiculoDTO)
+            {
+                var validacao = new ErrosDeValidacao
                 {
-                    var validacao = new ErrosDeValidacao
-                    {
-                        Mensagens = new List<string>()
-                    };
+                    Mensagens = new List<string>()
+                };
 
-                    if (string.IsNullOrEmpty(veiculoDTO.Nome))
-                        validacao.Mensagens.Add("O nome não pode ser vazio");
+                if (string.IsNullOrEmpty(veiculoDTO.Nome))
+                    validacao.Mensagens.Add("O nome não pode ser vazio");
 
-                    if (string.IsNullOrEmpty(veiculoDTO.Marca))
-                        validacao.Mensagens.Add("A marca não pode ficar em branco");
+                if (string.IsNullOrEmpty(veiculoDTO.Marca))
+                    validacao.Mensagens.Add("A marca não pode ficar em branco");
 
-                    if (veiculoDTO.Ano < 1950)
-                        validacao.Mensagens.Add("Veiculo muito antigo");
+                if (veiculoDTO.Ano < 1950)
+                    validacao.Mensagens.Add("Veiculo muito antigo");
 
-                    return validacao;
-                }
-                endpoints.MapPost("/veiculos", ([FromBody] VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
+                return validacao;
+            }
+            endpoints.MapPost("/veiculos", ([FromBody] VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
+            {
+                var validacao = validaDTO(veiculoDTO);
+                if (validacao.Mensagens.Count > 0)
+                    return Results.BadRequest(validacao);
+
+                var veiculo = new Veiculo
                 {
-                    var validacao = validaDTO(veiculoDTO);
-                    if (validacao.Mensagens.Count > 0)
-                        return Results.BadRequest(validacao);
+                    Nome = veiculoDTO.Nome,
+                    Marca = veiculoDTO.Marca,
+                    Ano = veiculoDTO.Ano
+                };
 
-                    var veiculo = new Veiculo
-                    {
-                        Nome = veiculoDTO.Nome,
-                        Marca = veiculoDTO.Marca,
-                        Ano = veiculoDTO.Ano
-                    };
+                veiculoServico.Incluir(veiculo);
 
-                    veiculoServico.Incluir(veiculo);
+                return Results.Created($"/veiculo/{veiculo.Id}", veiculo);
+            })
+                .RequireAuthorization()
+                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
+                .WithTags("Veiculos");
 
-                    return Results.Created($"/veiculo/{veiculo.Id}", veiculo);
-                })
-                    .RequireAuthorization()
-                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
-                    .WithTags("Veiculos");
+            endpoints.MapGet("/veiculos", ([FromQuery] int? pagina, IVeiculoServico veiculoServico) =>
+            {
+                var veiculos = veiculoServico.Todos(pagina);
 
-                endpoints.MapGet("/veiculos", ([FromQuery] int? pagina, IVeiculoServico veiculoServico) =>
-                {
-                    var veiculos = veiculoServico.Todos(pagina);
+                return Results.Ok(veiculos);
+            })
+                .RequireAuthorization()
+                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
+                .WithTags("Veiculos");
 
-                    return Results.Ok(veiculos);
-                })
-                    .RequireAuthorization()
-                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
-                    .WithTags("Veiculos");
+            endpoints.MapGet("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
+            {
+                var veiculo = veiculoServico.BuscaPorId(id);
 
-                endpoints.MapGet("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
-                {
-                    var veiculo = veiculoServico.BuscaPorId(id);
+                if (veiculo == null) return Results.NotFound();
 
-                    if (veiculo == null) return Results.NotFound();
+                return Results.Ok(veiculo);
+            })
+                .RequireAuthorization()
+                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
+                .WithTags("Veiculos");
 
-                    return Results.Ok(veiculo);
-                })
-                    .RequireAuthorization()
-                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
-                    .WithTags("Veiculos");
+            endpoints.MapPut("/veiculos/{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
+            {
+                var veiculo = veiculoServico.BuscaPorId(id);
+                if (veiculo == null) return Results.NotFound();
 
-                endpoints.MapPut("/veiculos/{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
-                {
-                    var veiculo = veiculoServico.BuscaPorId(id);
-                    if (veiculo == null) return Results.NotFound();
+                var validacao = validaDTO(veiculoDTO);
+                if (validacao.Mensagens.Count > 0)
+                    return Results.BadRequest(validacao);
 
-                    var validacao = validaDTO(veiculoDTO);
-                    if (validacao.Mensagens.Count > 0)
-                        return Results.BadRequest(validacao);
-                        
 
-                    veiculo.Nome = veiculoDTO.Nome;
-                    veiculo.Marca = veiculoDTO.Marca;
-                    veiculo.Ano = veiculoDTO.Ano;
+                veiculo.Nome = veiculoDTO.Nome;
+                veiculo.Marca = veiculoDTO.Marca;
+                veiculo.Ano = veiculoDTO.Ano;
 
-                    veiculoServico.Atualizar(veiculo);
+                veiculoServico.Atualizar(veiculo);
 
-                    return Results.Ok(veiculo);
-                })
-                    .RequireAuthorization()
-                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
-                    .WithTags("Veiculos");
+                return Results.Ok(veiculo);
+            })
+                .RequireAuthorization()
+                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                .WithTags("Veiculos");
 
-                endpoints.MapDelete("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
-                {
-                    var veiculo = veiculoServico.BuscaPorId(id);
-                    if (veiculo == null) return Results.NotFound();
+            endpoints.MapDelete("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
+            {
+                var veiculo = veiculoServico.BuscaPorId(id);
+                if (veiculo == null) return Results.NotFound();
 
-                    veiculoServico.Apagar(veiculo);
+                veiculoServico.Apagar(veiculo);
 
-                    return Results.NoContent();
-                })
-                    .RequireAuthorization()
-                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
-                    .WithTags("Veiculos");
+                return Results.NoContent();
+            })
+                .RequireAuthorization()
+                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                .WithTags("Veiculos");
             #endregion
         });
     }
