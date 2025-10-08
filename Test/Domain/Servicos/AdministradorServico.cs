@@ -4,34 +4,19 @@ using Microsoft.Extensions.Configuration;
 using minimal_api.Dominio.Entidades;
 using minimal_api.Dominio.Servicos;
 using minimal_api.Infraestrutura.Db;
+using Test.Helpers;
 
 namespace Test.Domain.Servicos
 {
     [TestClass]
     public class AdministradorServicoTest
     {
-        private DbContexto CriarContextoDeTeste()
-        {
-            //Configurar o ConfigurationBuilder
-            var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location); //Para que o .NET saiba qual arquivo appsettings.json usar e assim não alterar o real.
-            var path = Path.GetFullPath(Path.Combine(assemblyPath ?? "", "..", "..", ".."));
-
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(path ?? Directory.GetCurrentDirectory()) //se o path vier nulo ...
-                .AddJsonFile("appsettings.Test.json", optional: false, reloadOnChange: true)
-                .AddEnvironmentVariables();
-
-            var configuration = builder.Build();
-
-            return new DbContexto(configuration);
-        }
-
         [TestMethod]
         public void TestandoSalvarAdministrador()
         {
             //Arrange - todas as variaveis criadas para fazer validacoes...
-            var context = CriarContextoDeTeste();
-            context.Database.ExecuteSqlRaw("TRUNCATE TABLE Administradores"); //para limpar a tabela...
+            var context = Setup.CriarAdministradorServicoParaTeste();
+            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela...
 
             var adm = new Administrador();
             adm.Email = "teste@test.com";
@@ -52,8 +37,8 @@ namespace Test.Domain.Servicos
         public void TestandoBuscaPorId()
         {
             //Arrange - todas as variaveis criadas para fazer validacoes...
-            var context = CriarContextoDeTeste();
-            context.Database.ExecuteSqlRaw("TRUNCATE TABLE Administradores"); //para limpar a tabela...
+            var context = Setup.CriarAdministradorServicoParaTeste();
+            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela... DELETE PARA O SQLITE
 
             var adm = new Administrador();
             adm.Email = "teste@test.com";
@@ -64,11 +49,11 @@ namespace Test.Domain.Servicos
 
             //Act - todas as ações que vamos fazer...
             adminstradorServico.Incluir(adm);
+            context.SaveChanges(); //Salve as mudanças no banco de dados...
             var admDoBanco = adminstradorServico.BuscaPorId(adm.Id);
 
             //Assert - onde é feita a validação dos dados...
-            Assert.AreEqual(1, admDoBanco?.Id);
-
+            Assert.AreEqual(adm.Id, admDoBanco?.Id);
         }
     }
 }

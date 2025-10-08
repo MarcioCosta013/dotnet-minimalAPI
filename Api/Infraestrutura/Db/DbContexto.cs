@@ -6,9 +6,16 @@ namespace minimal_api.Infraestrutura.Db
     public class DbContexto : DbContext
     {
         private readonly IConfiguration _configuracaoAppSettings;
+
+        //Construtor padrao para producao
         public DbContexto(IConfiguration configuracaoAppSettings)
         {
             _configuracaoAppSettings = configuracaoAppSettings; //Configuracao pelo construtor
+        }
+
+        //Construtor para testes
+        public DbContexto(DbContextOptions<DbContexto> options) : base(options)
+        {
         }
 
         //Mapeamento
@@ -31,7 +38,7 @@ namespace minimal_api.Infraestrutura.Db
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
+            if (!optionsBuilder.IsConfigured && _configuracaoAppSettings != null)
             {
                 //caso a configuracao nao tenha ocorrido pelo contrutor vai ser feita aqui...
                 var stringConexao = _configuracaoAppSettings.GetConnectionString("mysql")?.ToString(); //o '?' é para se nao encontrar nada retornar vazio...

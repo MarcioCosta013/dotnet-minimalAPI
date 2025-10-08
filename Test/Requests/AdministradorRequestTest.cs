@@ -10,17 +10,17 @@ namespace Test.Requests;
 [TestClass]
 public class AdministradorRequestTest
 {
-    [ClassInitialize]
-    public static void ClassInit(TestContext testContext)
-    {
-        Setup.ClassInit(testContext);
-    }
+    // [ClassInitialize]
+    // public static void ClassInit(TestContext testContext)
+    // {
+    //     Setup.ClassInit(testContext);
+    // }
 
-    [ClassCleanup]
-    public static void ClassCleanup()
-    {
-        Setup.ClassCleanup();
-    }
+    // [ClassCleanup]
+    // public static void ClassCleanup()
+    // {
+    //     Setup.ClassCleanup();
+    // }
     
     [TestMethod]
     public async Task TestarGetSetPropriedades()
@@ -32,9 +32,11 @@ public class AdministradorRequestTest
         };
 
         var content = new StringContent(JsonSerializer.Serialize(loginDTO), Encoding.UTF8,  "Application/json");
+        using var client = new HttpClient();
+        client.BaseAddress = new Uri("http://localhost:5038"); 
 
         // Act
-        var response = await Setup.client.PostAsync("/administradores/login", content);
+        var response = await client.PostAsync("/administradores/login", content);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);

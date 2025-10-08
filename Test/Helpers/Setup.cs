@@ -1,42 +1,21 @@
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using minimal_api.Dominio.Interfaces;
-using Test.Mocks;
-using Microsoft.Extensions.DependencyInjection;
-using minimal_api;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using minimal_api.Infraestrutura.Db;
+using minimal_api.Dominio.Servicos;
 
 namespace Test.Helpers;
 
-public class Setup
+public static class Setup
 {
-    public const string PORT = "5001";
-    public static TestContext testContext = default!;
-    public static WebApplicationFactory<Startup> http = default!;
-    public static HttpClient client = default!;
-
-    public static void ClassInit(TestContext testContext)
+    public static DbContexto CriarAdministradorServicoParaTeste()
     {
-        Setup.testContext = testContext;
-        Setup.http = new WebApplicationFactory<Startup>();
+        var options = new DbContextOptionsBuilder<DbContexto>()
+            .UseSqlite("DataSource=:memory:")
+            .Options;
 
-        Setup.http = Setup.http.WithWebHostBuilder(builder =>
-        {
-            builder.UseSetting("http_port", Setup.PORT).UseEnvironment("Testing");
+        var contexto = new DbContexto(options);
+        contexto.Database.OpenConnection();
+        contexto.Database.EnsureCreated();
 
-            builder.ConfigureServices(services =>
-            {
-                services.AddScoped<IAdministradorServico, AdministradorServicoMock>();
-
-            });
-
-        });
-
-        Setup.client = Setup.http.CreateClient();
-    }
-
-    public static void ClassCleanup()
-    {
-        Setup.http.Dispose();
+        return contexto;
     }
 }
