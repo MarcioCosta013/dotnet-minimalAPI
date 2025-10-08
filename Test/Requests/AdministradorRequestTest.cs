@@ -9,25 +9,13 @@ namespace Test.Requests;
 
 [TestClass]
 public class AdministradorRequestTest
-{
-    // [ClassInitialize]
-    // public static void ClassInit(TestContext testContext)
-    // {
-    //     Setup.ClassInit(testContext);
-    // }
-
-    // [ClassCleanup]
-    // public static void ClassCleanup()
-    // {
-    //     Setup.ClassCleanup();
-    // }
-    
+{    
     [TestMethod]
     public async Task TestarGetSetPropriedades()
     {
         // Arrange
         var loginDTO = new LoginDTO{
-            Email = "adm@test.com",
+            Email = "administrador@test.com",
             Senha = "123456"
         };
 
