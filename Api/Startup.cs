@@ -26,7 +26,7 @@ public class Startup
     public Startup(IConfiguration configuration)
     {
         Configuration = configuration;
-        key = Configuration?.GetSection("Jwt")?.ToString() ?? "";
+        key = Configuration?.GetSection("Jwt")["Key"] ?? "";
     }
 
 

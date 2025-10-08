@@ -18,4 +18,17 @@ public static class Setup
 
         return contexto;
     }
+
+    public static DbContexto CriarVeiculoServicoParaTeste()
+    {
+        var options = new DbContextOptionsBuilder<DbContexto>()
+            .UseSqlite("DataSource=:memory:")
+            .Options;
+
+        var contexto = new DbContexto(options);
+        contexto.Database.OpenConnection();
+        contexto.Database.EnsureCreated();
+
+        return contexto;
+    }
 }

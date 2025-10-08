@@ -8,7 +8,7 @@ namespace minimal_api.Infraestrutura.Db
         private readonly IConfiguration _configuracaoAppSettings;
 
         //Construtor padrao para producao
-        public DbContexto(IConfiguration configuracaoAppSettings)
+        private DbContexto(IConfiguration configuracaoAppSettings) //tornei privado para forcar o uso do outro construtor e não ter anbiguidade
         {
             _configuracaoAppSettings = configuracaoAppSettings; //Configuracao pelo construtor
         }
