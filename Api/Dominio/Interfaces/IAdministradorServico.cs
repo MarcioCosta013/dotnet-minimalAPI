@@ -9,5 +9,7 @@ namespace minimal_api.Dominio.Interfaces
         Administrador Incluir(Administrador administrador);
         List<Administrador> Todos(int? pagina);
         Administrador? BuscaPorId(int id);
+        void Atualizar(Administrador administrador);
+        void Apagar(Administrador administrador);
     }
 }

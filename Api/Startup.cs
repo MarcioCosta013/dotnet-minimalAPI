@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using minimal_api;
 using minimal_api.Dominio.DTOs;
 using minimal_api.Dominio.Entidades;
 using minimal_api.Dominio.Enuns;
@@ -106,222 +105,277 @@ public class Startup
             endpoints.MapGet("/", () => Results.Json(new Home())).AllowAnonymous().WithTags("Home");
             #endregion
 
-            #region administradores
-            string GerarTokenJwt(Administrador administrador)
-            {
-                if (string.IsNullOrEmpty(key)) return string.Empty;
-
-                var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-                var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256); //Criptografa esses dados.
-
-                var claims = new List<Claim>()
-                {
-                    new Claim("Email", administrador.Email),
-                    new Claim("Perfil", administrador.Perfil),
-                    new Claim(ClaimTypes.Role, administrador.Perfil),
-                };
-                var token = new JwtSecurityToken(
-                    claims: claims,
-                    expires: DateTime.Now.AddDays(1),
-                    signingCredentials: credentials
-                );
-
-                return new JwtSecurityTokenHandler().WriteToken(token);
-            }
-            endpoints.MapPost("/administradores/login", ([FromBody] LoginDTO loginDTO, IAdministradorServico administradorServico) =>
-            {
-                var adm = administradorServico.Login(loginDTO);
-                if (adm != null)
-                {
-                    string token = GerarTokenJwt(adm);
-                    return Results.Ok(new AdministradorLogado
+            #region endpoints-administradores
+                #region gerarTokenJwt
+                    string GerarTokenJwt(Administrador administrador)
                     {
-                        Email = adm.Email,
-                        Perfil = adm.Perfil,
-                        Token = token
-                    });
-                }
-                else
-                    return Results.Unauthorized();
-            })
-                .AllowAnonymous()
-                .WithTags("Administradores");
+                        if (string.IsNullOrEmpty(key)) return string.Empty;
 
-            endpoints.MapGet("/administradores", ([FromQuery] int? pagina, IAdministradorServico administradorServico) =>
-            {
-                var adms = new List<AdministradoModelViews>();
-                var adminiastradores = administradorServico.Todos(pagina);
-                foreach (var adm in adminiastradores)
+                        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+                        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256); //Criptografa esses dados.
+
+                        var claims = new List<Claim>()
+                        {
+                            new Claim("Email", administrador.Email),
+                            new Claim("Perfil", administrador.Perfil),
+                            new Claim(ClaimTypes.Role, administrador.Perfil),
+                        };
+                        var token = new JwtSecurityToken(
+                            claims: claims,
+                            expires: DateTime.Now.AddDays(1),
+                            signingCredentials: credentials
+                        );
+
+                        return new JwtSecurityTokenHandler().WriteToken(token);
+                    }
+                #endregion
+                
+                #region validacaoDTO-administradores
+                    ErrosDeValidacao validacaoAdministradoresDTO(AdministradorDTO administradorDTO)
+                    {
+                        var validacao = new ErrosDeValidacao
+                        {
+                            Mensagens = new List<string>()
+                        };
+
+                        if (string.IsNullOrEmpty(administradorDTO.Email))
+                            validacao.Mensagens.Add("O Email não pode ser vazio");
+
+                        if (string.IsNullOrEmpty(administradorDTO.Senha))
+                            validacao.Mensagens.Add("A Senha não pode ficar em branco");
+
+                        if (administradorDTO.Perfil == null || !Enum.IsDefined(typeof(Perfil), administradorDTO.Perfil))
+                            validacao.Mensagens.Add("Perfil informado é inválido!");
+
+                        return validacao;
+                    }
+                #endregion
+                endpoints.MapPost("/administradores/login", ([FromBody] LoginDTO loginDTO, IAdministradorServico administradorServico) =>
                 {
-                    adms.Add(new AdministradoModelViews
+                    var adm = administradorServico.Login(loginDTO);
+                    if (adm != null)
+                    {
+                        string token = GerarTokenJwt(adm);
+                        return Results.Ok(new AdministradorLogado
+                        {
+                            Email = adm.Email,
+                            Perfil = adm.Perfil,
+                            Token = token
+                        });
+                    }
+                    else
+                        return Results.Unauthorized();
+                })
+                    .AllowAnonymous()
+                    .WithTags("Administradores");
+
+                endpoints.MapGet("/administradores", ([FromQuery] int? pagina, IAdministradorServico administradorServico) =>
+                {
+                    var adms = new List<AdministradoModelViews>();
+                    var adminiastradores = administradorServico.Todos(pagina);
+                    foreach (var adm in adminiastradores)
+                    {
+                        adms.Add(new AdministradoModelViews
+                        {
+                            Id = adm.Id,
+                            Email = adm.Email,
+                            Perfil = adm.Perfil
+                        });
+                    }
+                    return Results.Ok(adms);
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                    .WithTags("Administradores");
+
+                endpoints.MapPost("/administradores", ([FromBody] AdministradorDTO administradorDTO, IAdministradorServico administradorServico) =>
+
+                {
+                    #region validacao
+                        var validacao = new ErrosDeValidacao
+                        {
+                            Mensagens = new List<string>()
+                        };
+
+                        if (string.IsNullOrEmpty(administradorDTO.Email))
+                            validacao.Mensagens.Add("Email não pode ser vazio!");
+
+                        if (string.IsNullOrEmpty(administradorDTO.Senha))
+                            validacao.Mensagens.Add("Senha não pode ser vazia!");
+
+                        if (administradorDTO.Perfil == null)
+                            validacao.Mensagens.Add("Perfil não pode ser vazio!");
+                    #endregion
+
+                    if (validacao.Mensagens.Count > 0)
+                        return Results.BadRequest(validacao);
+
+                    var adm = new Administrador
+                    {
+                        Email = administradorDTO.Email,
+                        Senha = administradorDTO.Senha,
+                        Perfil = administradorDTO.Perfil.ToString() ?? Perfil.Editor.ToString() //Se vier vazio coloca o editor como padrão.
+                    };
+
+                    administradorServico.Incluir(adm);
+
+                    return Results.Created($"/adiministrador/{adm.Id}", new AdministradoModelViews
                     {
                         Id = adm.Id,
                         Email = adm.Email,
                         Perfil = adm.Perfil
                     });
-                }
-                return Results.Ok(adms);
-            })
-                .RequireAuthorization()
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
-                .WithTags("Administradores");
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                    .WithTags("Administradores");
 
-            endpoints.MapPost("/administradores", ([FromBody] AdministradorDTO administradorDTO, IAdministradorServico administradorServico) =>
-
-            {
-                #region validacao
-                var validacao = new ErrosDeValidacao
+                endpoints.MapGet("/administrador/{id}", ([FromRoute] int id, IAdministradorServico administradorServico) =>
                 {
-                    Mensagens = new List<string>()
-                };
+                    var administrador = administradorServico.BuscaPorId(id);
 
-                if (string.IsNullOrEmpty(administradorDTO.Email))
-                    validacao.Mensagens.Add("Email não pode ser vazio!");
+                    if (administrador == null) return Results.NotFound();
 
-                if (string.IsNullOrEmpty(administradorDTO.Senha))
-                    validacao.Mensagens.Add("Senha não pode ser vazia!");
-
-                if (administradorDTO.Perfil == null)
-                    validacao.Mensagens.Add("Perfil não pode ser vazio!");
-                #endregion
-
-                if (validacao.Mensagens.Count > 0)
-                    return Results.BadRequest(validacao);
-
-                var adm = new Administrador
+                    return Results.Ok(new AdministradoModelViews
+                    {
+                        Id = administrador.Id,
+                        Email = administrador.Email,
+                        Perfil = administrador.Perfil
+                    });
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                    .WithTags("Administradores");
+                
+                endpoints.MapPut("/administrador/{id}", ([FromRoute] int id, AdministradorDTO administradorDTO, IAdministradorServico administradorServico) =>
                 {
-                    Email = administradorDTO.Email,
-                    Senha = administradorDTO.Senha,
-                    Perfil = administradorDTO.Perfil.ToString() ?? Perfil.Editor.ToString() //Se vier vazio coloca o editor como padrão.
-                };
+                    var administrador = administradorServico.BuscaPorId(id);
+                    if (administrador == null) return Results.NotFound();
+                    var validacao = validacaoAdministradoresDTO(administradorDTO);
+                    if (validacao.Mensagens.Count > 0)
+                        return Results.BadRequest(validacao);
 
-                administradorServico.Incluir(adm);
-
-                return Results.Created($"/adiministrador/{adm.Id}", new AdministradoModelViews
+                    administrador.Email = administradorDTO.Email;
+                    administrador.Senha = administradorDTO.Senha;
+                    administrador.Perfil = administradorDTO.Perfil?.ToString() ?? Perfil.Editor.ToString(); //nao vai vir null pq já foi verificado, foi só pra tirar o wirn.
+                    /*
+                    o valor que veio em administradorDTO.Perfil foi verificado em validacaoAdministradoresDTO, ou seja vai vir um dos valores que tem em Perfil(enum).
+                    Se o valor do enum Perfil vier preenchido no DTO, ele será convertido para string e atribuído ao campo Perfil do objeto Administrador.
+                    Se vier nulo, será atribuído o valor padrão "Editor".
+                    */
+                    
+                    administradorServico.Atualizar(administrador);
+                    return Results.Ok(administrador);
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                    .WithTags("Administradores");
+            
+                endpoints.MapDelete("/administrador/{id}", ([FromRoute] int id, IAdministradorServico administradorServico) =>
                 {
-                    Id = adm.Id,
-                    Email = adm.Email,
-                    Perfil = adm.Perfil
-                });
-            })
-                .RequireAuthorization()
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
-                .WithTags("Administradores");
+                    var administrador = administradorServico.BuscaPorId(id);
+                    if (administrador == null) return Results.NotFound();
+                    administradorServico.Apagar(administrador);
 
-            endpoints.MapGet("/administrador/{id}", ([FromRoute] int id, IAdministradorServico administradorServico) =>
-            {
-                var administrador = administradorServico.BuscaPorId(id);
-
-                if (administrador == null) return Results.NotFound();
-
-                return Results.Ok(new AdministradoModelViews
-                {
-                    Id = administrador.Id,
-                    Email = administrador.Email,
-                    Perfil = administrador.Perfil
-                });
-            })
-                .RequireAuthorization()
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
-                .WithTags("Administradores");
+                    return Results.NoContent();
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                    .WithTags("Administradores");
             #endregion
 
-            #region veiculos
-            ErrosDeValidacao validaDTO(VeiculoDTO veiculoDTO)
-            {
-                var validacao = new ErrosDeValidacao
+            #region endpoints-veiculos
+                #region validacaoDTO-veiculo
+                    ErrosDeValidacao validacaoVeiculoDTO(VeiculoDTO veiculoDTO)
+                    {
+                        var validacao = new ErrosDeValidacao
+                        {
+                            Mensagens = new List<string>()
+                        };
+
+                        if (string.IsNullOrEmpty(veiculoDTO.Nome))
+                            validacao.Mensagens.Add("O nome não pode ser vazio");
+
+                        if (string.IsNullOrEmpty(veiculoDTO.Marca))
+                            validacao.Mensagens.Add("A marca não pode ficar em branco");
+
+                        if (veiculoDTO.Ano < 1950)
+                            validacao.Mensagens.Add("Veiculo muito antigo");
+
+                        return validacao;
+                    }
+                #endregion
+                endpoints.MapPost("/veiculos", ([FromBody] VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
                 {
-                    Mensagens = new List<string>()
-                };
+                    var validacao = validacaoVeiculoDTO(veiculoDTO);
+                    if (validacao.Mensagens.Count > 0)
+                        return Results.BadRequest(validacao);
 
-                if (string.IsNullOrEmpty(veiculoDTO.Nome))
-                    validacao.Mensagens.Add("O nome não pode ser vazio");
+                    var veiculo = new Veiculo
+                    {
+                        Nome = veiculoDTO.Nome,
+                        Marca = veiculoDTO.Marca,
+                        Ano = veiculoDTO.Ano
+                    };
 
-                if (string.IsNullOrEmpty(veiculoDTO.Marca))
-                    validacao.Mensagens.Add("A marca não pode ficar em branco");
+                    veiculoServico.Incluir(veiculo);
 
-                if (veiculoDTO.Ano < 1950)
-                    validacao.Mensagens.Add("Veiculo muito antigo");
+                    return Results.Created($"/veiculo/{veiculo.Id}", veiculo);
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
+                    .WithTags("Veiculos");
 
-                return validacao;
-            }
-            endpoints.MapPost("/veiculos", ([FromBody] VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
-            {
-                var validacao = validaDTO(veiculoDTO);
-                if (validacao.Mensagens.Count > 0)
-                    return Results.BadRequest(validacao);
-
-                var veiculo = new Veiculo
+                endpoints.MapGet("/veiculos", ([FromQuery] int? pagina, IVeiculoServico veiculoServico) =>
                 {
-                    Nome = veiculoDTO.Nome,
-                    Marca = veiculoDTO.Marca,
-                    Ano = veiculoDTO.Ano
-                };
+                    var veiculos = veiculoServico.Todos(pagina);
 
-                veiculoServico.Incluir(veiculo);
+                    return Results.Ok(veiculos);
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
+                    .WithTags("Veiculos");
 
-                return Results.Created($"/veiculo/{veiculo.Id}", veiculo);
-            })
-                .RequireAuthorization()
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
-                .WithTags("Veiculos");
+                endpoints.MapGet("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
+                {
+                    var veiculo = veiculoServico.BuscaPorId(id);
+                    if (veiculo == null) return Results.NotFound();
+                    return Results.Ok(veiculo);
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
+                    .WithTags("Veiculos");
 
-            endpoints.MapGet("/veiculos", ([FromQuery] int? pagina, IVeiculoServico veiculoServico) =>
-            {
-                var veiculos = veiculoServico.Todos(pagina);
+                endpoints.MapPut("/veiculos/{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
+                {
+                    var veiculo = veiculoServico.BuscaPorId(id);
+                    if (veiculo == null) return Results.NotFound();
+                    var validacao = validacaoVeiculoDTO(veiculoDTO);
+                    if (validacao.Mensagens.Count > 0)
+                        return Results.BadRequest(validacao);
 
-                return Results.Ok(veiculos);
-            })
-                .RequireAuthorization()
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
-                .WithTags("Veiculos");
+                    veiculo.Nome = veiculoDTO.Nome;
+                    veiculo.Marca = veiculoDTO.Marca;
+                    veiculo.Ano = veiculoDTO.Ano;
 
-            endpoints.MapGet("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
-            {
-                var veiculo = veiculoServico.BuscaPorId(id);
+                    veiculoServico.Atualizar(veiculo);
+                    return Results.Ok(veiculo);
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                    .WithTags("Veiculos");
 
-                if (veiculo == null) return Results.NotFound();
+                endpoints.MapDelete("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
+                {
+                    var veiculo = veiculoServico.BuscaPorId(id);
+                    if (veiculo == null) return Results.NotFound();
+                    veiculoServico.Apagar(veiculo);
 
-                return Results.Ok(veiculo);
-            })
-                .RequireAuthorization()
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm,Editor" })
-                .WithTags("Veiculos");
-
-            endpoints.MapPut("/veiculos/{id}", ([FromRoute] int id, VeiculoDTO veiculoDTO, IVeiculoServico veiculoServico) =>
-            {
-                var veiculo = veiculoServico.BuscaPorId(id);
-                if (veiculo == null) return Results.NotFound();
-
-                var validacao = validaDTO(veiculoDTO);
-                if (validacao.Mensagens.Count > 0)
-                    return Results.BadRequest(validacao);
-
-
-                veiculo.Nome = veiculoDTO.Nome;
-                veiculo.Marca = veiculoDTO.Marca;
-                veiculo.Ano = veiculoDTO.Ano;
-
-                veiculoServico.Atualizar(veiculo);
-
-                return Results.Ok(veiculo);
-            })
-                .RequireAuthorization()
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
-                .WithTags("Veiculos");
-
-            endpoints.MapDelete("/veiculos/{id}", ([FromRoute] int id, IVeiculoServico veiculoServico) =>
-            {
-                var veiculo = veiculoServico.BuscaPorId(id);
-                if (veiculo == null) return Results.NotFound();
-
-                veiculoServico.Apagar(veiculo);
-
-                return Results.NoContent();
-            })
-                .RequireAuthorization()
-                .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
-                .WithTags("Veiculos");
+                    return Results.NoContent();
+                })
+                    .RequireAuthorization()
+                    .RequireAuthorization(new AuthorizeAttribute { Roles = "Adm" })
+                    .WithTags("Veiculos");
             #endregion
         });
     }
