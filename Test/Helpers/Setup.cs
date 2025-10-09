@@ -6,20 +6,7 @@ namespace Test.Helpers;
 
 public static class Setup
 {
-    public static DbContexto CriarAdministradorServicoParaTeste()
-    {
-        var options = new DbContextOptionsBuilder<DbContexto>()
-            .UseSqlite("DataSource=:memory:")
-            .Options;
-
-        var contexto = new DbContexto(options);
-        contexto.Database.OpenConnection();
-        contexto.Database.EnsureCreated();
-
-        return contexto;
-    }
-
-    public static DbContexto CriarVeiculoServicoParaTeste()
+    public static DbContexto CriarContextoParaTeste()
     {
         var options = new DbContextOptionsBuilder<DbContexto>()
             .UseSqlite("DataSource=:memory:")

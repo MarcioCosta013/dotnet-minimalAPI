@@ -1,9 +1,6 @@
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using minimal_api.Dominio.Entidades;
 using minimal_api.Dominio.Servicos;
-using minimal_api.Infraestrutura.Db;
 using Test.Helpers;
 
 namespace Test.Domain.Servicos
@@ -12,10 +9,10 @@ namespace Test.Domain.Servicos
     public class AdministradorServicoTest
     {
         [TestMethod]
-        public void TestandoSalvarAdministrador()
+        public void TestandoIncluirAdministrador()
         {
             //Arrange - todas as variaveis criadas para fazer validacoes...
-            var context = Setup.CriarAdministradorServicoParaTeste();
+            var context = Setup.CriarContextoParaTeste();
             context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela...
 
             var adm = new Administrador();
@@ -34,10 +31,10 @@ namespace Test.Domain.Servicos
         }
 
         [TestMethod]
-        public void TestandoBuscaPorId()
+        public void TestandoBuscaPorIdAdministrador()
         {
             //Arrange - todas as variaveis criadas para fazer validacoes...
-            var context = Setup.CriarAdministradorServicoParaTeste();
+            var context = Setup.CriarContextoParaTeste();
             context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela... DELETE PARA O SQLITE
 
             var adm = new Administrador();
@@ -55,5 +52,66 @@ namespace Test.Domain.Servicos
             //Assert - onde é feita a validação dos dados...
             Assert.AreEqual(adm.Id, admDoBanco?.Id);
         }
+
+        [TestMethod]
+        public void TestandoBuscaTodosAdministradorPorPagina()
+        {
+            //Arrange - todas as variaveis criadas para fazer validacoes...
+            var context = Setup.CriarContextoParaTeste();
+            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela...
+
+            for (int i = 1; i <= 25; i++)
+            {
+                var adm = new Administrador();
+                adm.Email = $"teste{i}@test.com";
+                adm.Senha = $"teste{i}";
+                adm.Perfil = "Adm";
+                context.Administradores.Add(adm);
+            };
+            context.SaveChanges(); //Salve as mudanças no banco de dados...
+
+            var adminstradorServico = new AdministradorServico(context);
+
+            //Act - todas as ações que vamos fazer...
+            var pagina1 = adminstradorServico.Todos(1);
+            var pagina2 = adminstradorServico.Todos(2);
+            var pagina3 = adminstradorServico.Todos(3);
+
+            //Assert - onde é feita a validação dos dados...
+            Assert.AreEqual(10, pagina1.Count());
+            Assert.AreEqual("teste1@test.com", pagina1.First().Email);
+            Assert.AreEqual(10, pagina2.Count());
+            Assert.AreEqual("teste11@test.com", pagina2.First().Email);
+            Assert.AreEqual(5, pagina3.Count());
+            Assert.AreEqual("teste21@test.com", pagina3.First().Email);
+        }
+
+        [TestMethod]
+        public void TestandoBuscaTodosAdministradorPaginaNull()
+        {
+            //Arrange - todas as variaveis criadas para fazer validacoes...
+            var context = Setup.CriarContextoParaTeste();
+            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela...
+
+            for (int i = 1; i <= 9; i++)
+            {
+                var adm = new Administrador();
+                adm.Email = $"teste{i}@test.com";
+                adm.Senha = $"teste{i}";
+                adm.Perfil = "Adm";
+                context.Administradores.Add(adm);
+            }
+            ;
+            context.SaveChanges(); //Salve as mudanças no banco de dados...
+
+            var administradorServico = new AdministradorServico(context);
+
+            //ACT - acoes
+            var resultado = administradorServico.Todos(null);
+
+            //Assert
+            Assert.AreEqual(9, resultado.Count);
+        }
+
     }
 }
