@@ -5,7 +5,7 @@ using minimal_api.Dominio.Interfaces;
 namespace Test.Mocks
 {
     public class AdministradorServicoMock : IAdministradorServico
-    {
+    { //Mock para testes unitários...
         private static List<Administrador> administradores = new List<Administrador>()
         {
             new Administrador{
@@ -21,6 +21,10 @@ namespace Test.Mocks
                 Perfil = "Editor"
             }
         };
+
+        public AdministradorServicoMock()
+        {}
+
         public Administrador? BuscaPorId(int id)
         {
             return administradores.Find(a => a.Id == id);
@@ -42,6 +46,20 @@ namespace Test.Mocks
         public List<Administrador> Todos(int? pagina)
         {
             return administradores;
+        }
+        
+        public void Atualizar(Administrador administrador)
+        { //Assim, o método Atualizar localiza o administrador pelo Id e atualiza seus dados na lista.
+            var index = administradores.FindIndex(a => a.Id == administrador.Id);
+            if (index != -1)
+            {
+                administradores[index] = administrador;
+            }
+        }
+
+        public void Apagar(Administrador administrador)
+        {
+            administradores.Remove(administrador);
         }
     }
 }

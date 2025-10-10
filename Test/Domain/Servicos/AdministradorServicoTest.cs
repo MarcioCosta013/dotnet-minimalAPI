@@ -113,5 +113,65 @@ namespace Test.Domain.Servicos
             Assert.AreEqual(9, resultado.Count);
         }
 
+        [TestMethod]
+        public void TestandoAlteracaoAdministrador()
+        {
+            //Arrange
+            var context = Setup.CriarContextoParaTeste();
+            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela... DELETE PARA O SQLITE
+
+            var adm = new Administrador();
+            adm.Email = "teste@test.com";
+            adm.Senha = "teste";
+            adm.Perfil = "Adm";
+
+            var adminstradorServico = new AdministradorServico(context);
+            adminstradorServico.Incluir(adm);
+            context.SaveChanges();
+
+            //Act
+            var admDoBanco = adminstradorServico.BuscaPorId(adm.Id);
+            admDoBanco.Email = "novoemail@test.com";
+            admDoBanco.Senha = "novaSenha";
+            if (admDoBanco != null)
+                adminstradorServico.Atualizar(admDoBanco);
+            context.SaveChanges();
+
+            var admAlterado = adminstradorServico.BuscaPorId(adm.Id);
+
+            //Assert
+            Assert.IsNotNull(admAlterado);
+            Assert.AreEqual("novoemail@test.com", admAlterado.Email);
+            Assert.AreEqual("novaSenha", admAlterado.Senha);
+        }
+
+        [TestMethod]
+        public void TestandoApagarUmAdinisnistrador()
+        {
+            // Arrange
+            var context = Setup.CriarContextoParaTeste();
+            context.Database.ExecuteSqlRaw("DELETE FROM Administradores");
+
+            var adm = new Administrador
+            {
+                Email = "teste@test.com",
+                Senha = "teste",
+                Perfil = "Adm"
+            };
+
+            var administradorServico = new AdministradorServico(context);
+            administradorServico.Incluir(adm);
+            context.SaveChanges();
+
+            // Act
+            administradorServico.Apagar(adm);
+            context.SaveChanges();
+
+            var resultado = administradorServico.BuscaPorId(adm.Id);
+
+            // Assert
+            Assert.IsNull(resultado);
+        }
+
     }
 }

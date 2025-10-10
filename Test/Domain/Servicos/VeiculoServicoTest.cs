@@ -13,7 +13,7 @@ namespace Test.Domain.Servicos
         {
             //Arrange - todas as variaveis criadas para fazer validacoes...
             var context = Setup.CriarContextoParaTeste();
-            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela...
+            context.Database.ExecuteSqlRaw("DELETE FROM Veiculos"); //para limpar a tabela...
 
             var veiculo = new Veiculo();
             veiculo.Nome = "Onix";
@@ -35,19 +35,19 @@ namespace Test.Domain.Servicos
         {
             //Arrange - todas as variaveis criadas para fazer validacoes...
             var context = Setup.CriarContextoParaTeste();
-            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela... DELETE PARA O SQLITE
+            context.Database.ExecuteSqlRaw("DELETE FROM Veiculos"); //para limpar a tabela... DELETE PARA O SQLITE
 
             var veiculo = new Veiculo();
             veiculo.Nome = "Onix";
             veiculo.Marca = "Chevrolet";
             veiculo.Ano = 2020;
 
-            var adminstradorServico = new VeiculoServico(context);
+            var veiculoServico = new VeiculoServico(context);
 
             //Act - todas as ações que vamos fazer...
-            adminstradorServico.Incluir(veiculo);
+            veiculoServico.Incluir(veiculo);
             context.SaveChanges(); //Salve as mudanças no banco de dados...
-            var admDoBanco = adminstradorServico.BuscaPorId(veiculo.Id);
+            var admDoBanco = veiculoServico.BuscaPorId(veiculo.Id);
 
             //Assert - onde é feita a validação dos dados...
             Assert.AreEqual(veiculo.Id, admDoBanco?.Id);
@@ -58,7 +58,7 @@ namespace Test.Domain.Servicos
         {
             //Arrange - todas as variaveis criadas para fazer validacoes...
             var context = Setup.CriarContextoParaTeste();
-            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela...
+            context.Database.ExecuteSqlRaw("DELETE FROM Veiculos"); //para limpar a tabela...
 
             for (int i = 1; i <= 25; i++)
             {
@@ -91,7 +91,7 @@ namespace Test.Domain.Servicos
         {
             //Arrange - todas as variaveis criadas para fazer validacoes...
             var context = Setup.CriarContextoParaTeste();
-            context.Database.ExecuteSqlRaw("DELETE FROM Administradores"); //para limpar a tabela...
+            context.Database.ExecuteSqlRaw("DELETE FROM Veiculos"); //para limpar a tabela...
 
             for (int i = 1; i <= 9; i++)
             {
@@ -100,7 +100,8 @@ namespace Test.Domain.Servicos
                 veiculo.Marca = "Chevolet";
                 veiculo.Ano = 2020;
                 context.Veiculos.Add(veiculo);
-            };
+            }
+            ;
             context.SaveChanges(); //Salve as mudanças no banco de dados...
 
             var veiculos = new VeiculoServico(context);
@@ -111,6 +112,66 @@ namespace Test.Domain.Servicos
 
             //Assert
             Assert.AreEqual(9, resultado.Count);
+        }
+
+        [TestMethod]
+        public void TestandoAlteracaoVeiculo()
+        {
+            //Arrange
+            var context = Setup.CriarContextoParaTeste();
+            context.Database.ExecuteSqlRaw("DELETE FROM Veiculos"); //para limpar a tabela... DELETE PARA O SQLITE
+
+            var veiculo = new Veiculo();
+            veiculo.Nome = "Onix";
+            veiculo.Marca = "Chevolet";
+            veiculo.Ano = 2020;
+
+            var veiculoServico = new VeiculoServico(context);
+            veiculoServico.Incluir(veiculo);
+            context.SaveChanges();
+
+            //Act
+            var veiculoDoBanco = veiculoServico.BuscaPorId(veiculo.Id);
+            veiculoDoBanco.Nome = "OnixAlterado";
+            veiculoDoBanco.Marca = "ChevroletAlterado";
+            if (veiculoDoBanco != null)
+                veiculoServico.Atualizar(veiculoDoBanco);
+            context.SaveChanges();
+
+            var veiculoAlterado = veiculoServico.BuscaPorId(veiculo.Id);
+
+            //Assert
+            Assert.IsNotNull(veiculoAlterado);
+            Assert.AreEqual("OnixAlterado", veiculoAlterado.Nome);
+            Assert.AreEqual("ChevroletAlterado", veiculoAlterado.Marca);
+        }
+        
+        [TestMethod]
+        public void TestandoApagarUmVeiculo()
+        {
+            // Arrange
+            var context = Setup.CriarContextoParaTeste();
+            context.Database.ExecuteSqlRaw("DELETE FROM Administradores");
+
+            var veiculo = new Veiculo
+            {
+                Nome = "Onix",
+                Marca = "Chevrolet",
+                Ano = 2020
+            };
+
+            var veiculoServico = new VeiculoServico(context);
+            veiculoServico.Incluir(veiculo);
+            context.SaveChanges();
+
+            // Act
+            veiculoServico.Apagar(veiculo);
+            context.SaveChanges();
+
+            var resultado = veiculoServico.BuscaPorId(veiculo.Id);
+
+            // Assert
+            Assert.IsNull(resultado);
         }
     }
 }
