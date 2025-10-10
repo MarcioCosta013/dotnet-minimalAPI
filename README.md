@@ -1,10 +1,12 @@
-# Minimal API - Projeto de Gerenciamento de Veículos (Em andamento...)
+# Minimal API - Projeto de Gerenciamento de Veículos
 ![.Net](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white)
 ![MySQL](https://img.shields.io/badge/mysql-4479A1.svg?style=for-the-badge&logo=mysql&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
 
+[Projeto Original - DIO](https://github.com/digitalinnovationone/minimal-api)
 
 Este projeto é uma aplicação **Minimal API** desenvolvida em .NET 9, com autenticação JWT, integração com MySQL e testes automatizados utilizando MSTest. O objetivo é fornecer uma API simples e eficiente para cadastro e gerenciamento de administradores e veículos.
+Diferente do Projeto original, nesse adicionei mais endpoints a entidade Administrador (possibilitando Alterrar e Apagar contas) e na parte de Testes cobrir todas as outras funções que o projeto original não tinha implementado.
 
 ---
 
@@ -85,6 +87,7 @@ minimal-api/
 
 ### Testes
 
+- [Microsoft.EntityFrameworkCore.Sqlite](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Sqlite.Core/)
 - [Microsoft.NET.Test.Sdk 17.12.0](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 - [MSTest 3.6.4](https://www.nuget.org/packages/MSTest)
 - [Microsoft.AspNetCore.Mvc.Testing 9.0.9](https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Testing)
@@ -101,7 +104,8 @@ minimal-api/
    
 
 2. **Instale o .NET 9.0 SDK:**
-Download .NET 9.0
+
+      [Download .NET 9.0](https://dotnet.microsoft.com/pt-br/download/dotnet/9.0)
 
 3. **Restaure as dependências:**
 
@@ -109,19 +113,20 @@ Download .NET 9.0
     dotnet restore
 
 4. **Configure o banco de dados MySQL:**
-    - Crie um banco chamado minimal_api (produção) e minimal_apitest (testes).
-    - Atualize usuário/senha em Api/appsettings.json e Test/appsettings.Test.json conforme necessário.
+    - Crie um banco chamado minimal_api.
+    - Atualize usuário/senha em ```Api/appsettings.json``` conforme necessário.
 
 5. **Execute as migrações para criar as tabelas:**
 
     ```sh
     dotnet ef database update --project Api
+    ```
 
 ## Configuração
 
 - **Configuração de conexão:**
 
-    Edite os arquivos appsettings.json e appsettings.Test.json para ajustar a string de conexão do MySQL.
+    Edite os arquivos ```appsettings.json ``` para ajustar a string de conexão do MySQL.
 
 - **Variáveis de ambiente:**
 
@@ -129,19 +134,26 @@ Download .NET 9.0
 
 ## Como Rodar
 
-API
+### API
+
+Abra o Terminal na pasta ```\minimal-api\Api``` digite o seguinte comando:
+```sh
+dotnet run 
+```
+
+ou
 
 ```sh
-dotnet run --project Api
-
+dotnet watch run 
 ```
 
 Acesse http://localhost:5038/swagger para visualizar a documentação interativa.
 
-Testes
+### Testes
 
+Abra o Terminal na pasta ```\minimal-api\Test``` digite o seguinte comando:
 ```sh
-dotnet test Test
+dotnet test
 ```
 
 ## Endpoints Principais
@@ -155,6 +167,11 @@ dotnet test Test
 - ``GET /veiculos/{id}`` - Busca veículo por ID (requer token)
 - ``PUT /veiculos/{id}`` - Atualização de veículo (requer token)
 - ``DELETE /veiculos/{id}`` - Remoção de veículo (requer token)
+
+Os implementados por mim:
+
+- ``PUT /administradores/{id}`` - Atualização de administrador (requer token)
+- ``DELETE /administradores/{id}`` - Remoção de administrador (requer token)
 
 ## Licença
 
